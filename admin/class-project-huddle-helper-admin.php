@@ -144,8 +144,6 @@ class Project_Huddle_Helper_Admin {
 	 * @return array
 	 */
 	public function ph_add_multisite_setting( $settings ) {
-		// Track if sub-sites are already added to ProjectHuddle.
-        $network_populated = get_option( 'ph_network_populated', false );
 
 		$settings['fields']['multisite_network'] = array(
 			'type'        => 'custom',
@@ -153,7 +151,7 @@ class Project_Huddle_Helper_Admin {
 			'label'       => __( 'Add all sub-sites of the network to ProjectHuddle', 'project-huddle' ),
 			'description' => '',
 			'default'     => '',
-			'html'        => $network_populated ? '<button class="button button-primary" id="add_all_subsites_to_projecthuddle2" disabled>' . __( 'Add Sites', 'project-huddle' ) . '</button>' : '<button class="button button-primary" id="add_all_subsites_to_projecthuddle2">' . __( 'Add Sites', 'project-huddle' ) . '</button>',
+			'html'        => '<button class="button button-primary" id="add_all_subsites_to_projecthuddle2">' . __( 'Add Sites', 'project-huddle' ) . '</button>',
 		);
 		return $settings;
 	}
@@ -174,6 +172,9 @@ class Project_Huddle_Helper_Admin {
 			$current_site = get_current_blog_id();
 			$sites_added = array();
 			foreach ( $sites as $site ) {
+				if( post_exists( get_blog_option($site->blog_id, 'blogname' ),'','','ph-website' ) ) {
+					continue;
+				}
 				// Insert the page into the database
 				$page_id = wp_insert_post(
 					array(
@@ -199,15 +200,13 @@ class Project_Huddle_Helper_Admin {
 					update_blog_option( $site->blog_id, $key, $value );
 				}
 
-                // option to track if sub-sites are already added to ProjectHuddle.
-				update_blog_option( get_main_site_id(), 'ph_network_populated', 1 );
-
 				$sites_added[] = array(
 					'site_id' => $site->blog_id,
 					'post_id' => $page_id,
 					'ph_data' => $data,
 				);
 			}
+			
 			wp_send_json_success( array(
 				'success' => true,
 				'message' => 'Sites added successfully',
