@@ -1,9 +1,11 @@
-span#ph_network_add_sites_status {
+span#ph_network_add_sites_status,
+span#ph_network_remove_sites_status {
     display: none;
     width: 16px;
     height: 16px;
 }
-span#ph_network_add_sites_status:after {
+span#ph_network_add_sites_status:after,
+span#ph_network_remove_sites_status:after {
     content: "";
     display: block;
     width: 16px;

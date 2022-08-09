@@ -177,6 +177,16 @@ class Project_Huddle_Helper_Admin {
 			'default'     => '',
 			'html'        => '<button class="button button-primary" id="add_all_subsites_to_projecthuddle2">' . __( 'Add Sites', 'project-huddle' ) . '</button><span id="ph_network_add_sites_status"></span>',
 		);
+
+		$settings['fields']['multisite_network_remove'] = array(
+			'type'        => 'custom',
+			'id'          => 'ph_multisite_network_button_remove',
+			'label'       => __( 'Remove all sub-sites of the network from ProjectHuddle', 'project-huddle' ),
+			'description' => '',
+			'default'     => '',
+			'html'        => '<button class="button button-primary" id="remove_all_subsites_to_projecthuddle2">' . __( 'Remove Sites', 'project-huddle' ) . '</button><span id="ph_network_remove_sites_status"></span>',
+		);
+
 		return $settings;
 	}
 
@@ -191,25 +201,47 @@ class Project_Huddle_Helper_Admin {
 
 		$job = $_POST['job'];
 
-		if( 'add' === $job && is_multisite() ) {
+		if( is_multisite() ) {
 			$sites = get_sites(array('number' => 10000));
-			$current_site = get_current_blog_id();
-			$sites_added = array();
-			foreach ( $sites as $site ) {
-				if( post_exists( get_blog_option($site->blog_id, 'blogname' ),'','','ph-website' ) ) {
-					continue;
-				}
+            $ph_posts_ids = get_posts([
+	            'post_type' => 'ph-website',
+	            'numberposts' => -1,
+	            'fields' => 'ids'
+            ]);
 
-				$this->add_sub_sites_process->push_to_queue( $site );
-			}
+            if( $job === 'add' ) {
+	            foreach ( $sites as $site ) {
+		            if( post_exists( get_blog_option($site->blog_id, 'blogname' ),'','','ph-website' ) ) {
+			            continue;
+		            }
 
-            $this->add_sub_sites_process->save()->dispatch();
+		            $this->add_sub_sites_process->push_to_queue( array(
+			            'job' => $job,
+			            'data' => $site,
+		            ) );
+	            }
 
-			wp_send_json_success( array(
-				'success' => true,
-				'message' => 'Sites added successfully',
-				'data' => $this->add_sub_sites_process->sites_added,
-			), 200 );
+	            $this->add_sub_sites_process->save()->dispatch();
+
+	            wp_send_json_success( array(
+		            'success' => true,
+		            'message' => 'Sites added successfully',
+	            ), 200 );
+            } elseif ( $job === 'remove' ) {
+	            foreach ( $ph_posts_ids as $ph_post_id ) {
+		            $this->add_sub_sites_process->push_to_queue( array(
+			            'job' => $job,
+			            'data' => $ph_post_id,
+		            ) );
+	            }
+
+	            $this->add_sub_sites_process->save()->dispatch();
+
+	            wp_send_json_success( array(
+		            'success' => true,
+		            'message' => 'Sites removed successfully',
+	            ), 200 );
+            }
 		} else {
 			wp_send_json_error( array(
 				'success' => false,

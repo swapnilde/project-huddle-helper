@@ -24,37 +24,39 @@ class PHH_Background_Process extends \PH_WP_Background_Process  {
 	 * @return mixed
 	 */
 	protected function task( $item ) {
+		$job = $item['job'];
 
-		// Insert the page into the database
-		$page_id = wp_insert_post(
-			array(
-				'post_title'  => get_blog_option($item->blog_id, 'blogname' ),
-				'post_status' => 'publish',
-				'post_type'   => 'ph-website',
-			)
-		);
 
-		// add meta
-		update_post_meta( $page_id, 'ph_website_url', get_site_url( $item->blog_id ) );
-		update_post_meta( $page_id, 'ph_installed', true );
+		if( $job === 'add' ) {
+			$site = $item['data'];
+			// Insert the page into the database
+			$page_id = wp_insert_post(
+				array(
+					'post_title'  => get_blog_option($site->blog_id, 'blogname' ),
+					'post_status' => 'publish',
+					'post_type'   => 'ph-website',
+				)
+			);
 
-		// maybe regenerate key
-		$this->ph_generate_api_key( $page_id, false, get_site_url( $item->blog_id ) );
+			// add meta
+			update_post_meta( $page_id, 'ph_website_url', get_site_url( $site->blog_id ) );
+			update_post_meta( $page_id, 'ph_installed', true );
 
-		// update post id
-		update_blog_option( $item->blog_id, 'ph_site_post', $page_id );
+			// maybe regenerate key
+			$this->ph_generate_api_key( $page_id, false, get_site_url( $site->blog_id ) );
 
-		$data     = new PH_Child_Site_Data($page_id);
+			// update post id
+			update_blog_option( $site->blog_id, 'ph_site_post', $page_id );
 
-		foreach ($data as $key => $value) {
-			update_blog_option( $item->blog_id, $key, $value );
+			$data     = new PH_Child_Site_Data($page_id);
+
+			foreach ($data as $key => $value) {
+				update_blog_option( $site->blog_id, $key, $value );
+			}
+		} elseif ( $job === 'remove' ) {
+			$ph_post_id = $item['data'];
+			wp_delete_post( $ph_post_id, true );
 		}
-
-		$this->sites_added[] = array(
-			'site_id' => $item->blog_id,
-			'post_id' => $page_id,
-			'ph_data' => $data,
-		);
 
 		return false;
 	}
