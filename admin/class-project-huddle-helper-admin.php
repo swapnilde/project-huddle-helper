@@ -192,7 +192,7 @@ class Project_Huddle_Helper_Admin {
 		$job = $_POST['job'];
 
 		if( 'add' === $job && is_multisite() ) {
-			$sites = get_sites();
+			$sites = get_sites(array('number' => 10000));
 			$current_site = get_current_blog_id();
 			$sites_added = array();
 			foreach ( $sites as $site ) {
