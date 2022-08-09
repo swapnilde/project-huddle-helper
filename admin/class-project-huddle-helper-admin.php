@@ -11,6 +11,7 @@
  */
 
 require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-ph-child-site-data.php';
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-phh-background-process.php';
 
 /**
  * The admin-specific functionality of the plugin.
@@ -40,6 +41,15 @@ class Project_Huddle_Helper_Admin {
 	private $version;
 
 	/**
+	 * Holds the state for the add sites background process.
+	 *
+	 * @since    1.0.0
+	 * @access   private
+	 * @var      string    $add_sub_sites_process    State of the background process.
+	 */
+	private $add_sub_sites_process;
+
+	/**
 	 * Initialize the class and set its properties.
 	 *
 	 * @since    1.0.0
@@ -54,6 +64,8 @@ class Project_Huddle_Helper_Admin {
 		if( is_multisite() && is_main_site() ) {
 			add_filter( 'ph_settings_advanced', array( $this, 'ph_add_multisite_setting' ) );
 			add_action( 'wp_ajax_ph_network_sub_sites', array( $this, 'ph_network_sub_sites' ) );
+
+            $this->add_sub_sites_process = new \PHH_Background_Process();
 		}
 
 	}
@@ -79,7 +91,7 @@ class Project_Huddle_Helper_Admin {
      * Add the script required for all sub-sites to communicate with the main site.
      * This script is added on all sub-sites.
      * This script is not added on the main site.
-     * 
+     *
      * @since    1.0.0
 	 * @return void
 	 */
@@ -103,9 +115,21 @@ class Project_Huddle_Helper_Admin {
 	}
 
 	/**
+	 * Add the styles required for admin area.
+	 *
+	 * @since    1.0.0
+	 * @return void
+	 */
+    public function admin_styles() {
+        if( is_multisite() && is_main_site() ) {
+            wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/project-huddle-helper-admin.css', array(), $this->version, 'all' );
+        }
+    }
+
+	/**
      * This generates the script URL for the main site.
      * This is used to communicate with the sub-sites.
-     * 
+     *
 	 * @param $post_id
 	 * @since 1.0.0
 	 * @return void
@@ -138,7 +162,7 @@ class Project_Huddle_Helper_Admin {
 
 	/**
      * This adds the setting for the multisite.
-     * 
+     *
 	 * @param $settings
 	 * @since 1.0.0
 	 * @return array
@@ -151,7 +175,7 @@ class Project_Huddle_Helper_Admin {
 			'label'       => __( 'Add all sub-sites of the network to ProjectHuddle', 'project-huddle' ),
 			'description' => '',
 			'default'     => '',
-			'html'        => '<button class="button button-primary" id="add_all_subsites_to_projecthuddle2">' . __( 'Add Sites', 'project-huddle' ) . '</button>',
+			'html'        => '<button class="button button-primary" id="add_all_subsites_to_projecthuddle2">' . __( 'Add Sites', 'project-huddle' ) . '</button><span id="ph_network_add_sites_status"></span>',
 		);
 		return $settings;
 	}
@@ -175,42 +199,16 @@ class Project_Huddle_Helper_Admin {
 				if( post_exists( get_blog_option($site->blog_id, 'blogname' ),'','','ph-website' ) ) {
 					continue;
 				}
-				// Insert the page into the database
-				$page_id = wp_insert_post(
-					array(
-						'post_title'  => get_blog_option($site->blog_id, 'blogname' ),
-						'post_status' => 'publish',
-						'post_type'   => 'ph-website',
-					)
-				);
 
-				// add meta
-				update_post_meta( $page_id, 'ph_website_url', get_site_url( $site->blog_id ) );
-				update_post_meta( $page_id, 'ph_installed', true );
-
-				// maybe regenerate key
-				ph_generate_api_key( $page_id, false, get_site_url( $site->blog_id ) );
-
-				// update post id
-				update_blog_option( $site->blog_id, 'ph_site_post', $page_id );
-
-				$data     = new PH_Child_Site_Data($page_id);
-
-				foreach ($data as $key => $value) {
-					update_blog_option( $site->blog_id, $key, $value );
-				}
-
-				$sites_added[] = array(
-					'site_id' => $site->blog_id,
-					'post_id' => $page_id,
-					'ph_data' => $data,
-				);
+				$this->add_sub_sites_process->push_to_queue( $site );
 			}
-			
+
+            $this->add_sub_sites_process->save()->dispatch();
+
 			wp_send_json_success( array(
 				'success' => true,
 				'message' => 'Sites added successfully',
-				'data' => $sites_added
+				'data' => $this->add_sub_sites_process->sites_added,
 			), 200 );
 		} else {
 			wp_send_json_error( array(

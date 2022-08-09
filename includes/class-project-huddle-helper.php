@@ -100,6 +100,7 @@ class Project_Huddle_Helper {
 		$plugin_admin = new Project_Huddle_Helper_Admin( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'admin_scripts' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'admin_styles' );
 		$this->loader->add_action( 'wp_footer', $plugin_admin, 'frontend_scripts' );
 
 	}
