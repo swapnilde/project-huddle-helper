@@ -6,11 +6,11 @@
  */
 
 /**
- * Abstract WP_Async_Request class.
+ * Abstract PH_WP_Async_Request class.
  *
  * @abstract
  */
-abstract class WP_Async_Request {
+abstract class PH_WP_Async_Request {
 
 	/**
 	 * Prefix

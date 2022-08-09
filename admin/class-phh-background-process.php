@@ -1,8 +1,8 @@
 <?php
 
-require_once plugin_dir_path( __DIR__ ) . 'includes/libraries/wp-background-processing/class-wp-background-process.php';
+require_once plugin_dir_path( __DIR__ ) . 'includes/libraries/wp-background-processing/class-ph-wp-background-process.php';
 
-class PHH_Background_Process extends \WP_Background_Process  {
+class PHH_Background_Process extends \PH_WP_Background_Process  {
 
 	/**
 	 * @var string

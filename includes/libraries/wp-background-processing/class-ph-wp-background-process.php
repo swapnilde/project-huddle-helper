@@ -5,15 +5,15 @@
  * @package WP-Background-Processing
  */
 
-require_once plugin_dir_path( __FILE__ ) . 'class-wp-async-request.php';
+require_once plugin_dir_path( __FILE__ ) . 'class-ph-wp-async-request.php';
 
 /**
- * Abstract WP_Background_Process class.
+ * Abstract PH_WP_Background_Process class.
  *
  * @abstract
- * @extends WP_Async_Request
+ * @extends PH_WP_Async_Request
  */
-abstract class WP_Background_Process extends WP_Async_Request {
+abstract class PH_WP_Background_Process extends PH_WP_Async_Request {
 
 	/**
 	 * Action
