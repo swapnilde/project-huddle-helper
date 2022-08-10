@@ -24,10 +24,12 @@
 			 },
 			 beforeSend: function() {
 				 add_sites_loader.css('display', 'inline-block');
+				 add_sites.attr('disabled', 'disabled');
 			 }
 		 })
 		 .done(function(data) {
 			 add_sites_loader.hide();
+			 add_sites.removeAttr('disabled');
 			 console.log('data: ', data);
 		 })
 		 .fail(function(error) {
@@ -48,10 +50,12 @@
 			 },
 			 beforeSend: function() {
 				 remove_sites_loader.css('display', 'inline-block');
+				 remove_sites.attr('disabled', 'disabled');
 			 }
 		 })
 		 .done(function(data) {
 			 remove_sites_loader.hide();
+			 remove_sites.removeAttr('disabled');
 			 console.log('data: ', data);
 		 }).fail(function(error) {
 			 console.log('error: ', error.responseJSON);
